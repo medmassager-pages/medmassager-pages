@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MedMassager — Org Chart 2026</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;0,600;0,700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f4f1ec;
+    --card-bg: #ffffff;
+    --card-border: #d6d0c4;
+    --card-shadow: rgba(0,0,0,0.06);
+    --text-primary: #1a1a1a;
+    --text-secondary: #5c5549;
+    --text-tertiary: #8a8279;
+    --accent-gold: #b8963e;
+    --accent-teal: #3a8a7c;
+    --dept-growth: #d4a853;
+    --dept-office: #7b8fb2;
+    --dept-warehouse: #6aaa8e;
+    --dept-roadshow: #c47a5a;
+    --dept-customer: #9b7cb8;
+    --founder-bg: linear-gradient(135deg, #f7f3ed 0%, #ede7db 100%);
+    --god-bg: linear-gradient(135deg, #fdf8ef 0%, #f5eed9 100%);
+    --line-color: #c4bdb0;
+    --font-display: 'Playfair Display', Georgia, serif;
+    --font-body: 'DM Sans', -apple-system, sans-serif;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: var(--font-body);
+    background: var(--bg);
+    color: var(--text-primary);
+    min-height: 100vh;
+    padding: 40px 20px 80px;
+  }
+  .header { text-align: center; margin-bottom: 50px; }
+  .header h1 {
+    font-family: var(--font-display);
+    font-size: 2.2rem; font-weight: 700;
+    color: var(--text-primary);
+    letter-spacing: -0.02em; margin-bottom: 6px;
+  }
+  .header h1 span { color: var(--accent-gold); }
+  .header .subtitle {
+    font-size: 0.85rem; color: var(--text-tertiary);
+    letter-spacing: 0.08em; text-transform: uppercase;
+  }
+  .org-tree {
+    display: flex; flex-direction: column;
+    align-items: center; position: relative;
+  }
+  .v-line { width: 2px; height: 28px; background: var(--line-color); flex-shrink: 0; }
+  .v-line.short { height: 18px; }
+  .card {
+    background: var(--card-bg);
+    border: 1.5px solid var(--card-border);
+    border-radius: 10px;
+    padding: 18px 20px 16px;
+    text-align: center;
+    min-width: 210px; max-width: 240px;
+    position: relative;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    box-shadow: 0 2px 8px var(--card-shadow);
+  }
+  .card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.1);
+  }
+  .card .name { font-weight: 700; font-size: 0.92rem; color: var(--text-primary); margin-bottom: 2px; }
+  .card .title { font-size: 0.78rem; color: var(--text-secondary); line-height: 1.35; margin-bottom: 10px; }
+  .card .contact { border-top: 1px solid #ebe7e0; padding-top: 8px; display: flex; flex-direction: column; gap: 4px; }
+  .card .contact-row {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 0.72rem; color: var(--text-tertiary); justify-content: center;
+  }
+  .card .contact-row svg { flex-shrink: 0; opacity: 0.55; }
+  .card.god { background: var(--god-bg); border-color: var(--accent-gold); border-width: 2px; }
+  .card.god .name { color: var(--accent-gold); font-family: var(--font-display); font-size: 1.05rem; }
+  .card.god .title { color: var(--accent-gold); opacity: 0.7; font-style: italic; }
+  .card.founder { background: var(--founder-bg); border-color: var(--accent-teal); border-width: 2px; min-width: 240px; }
+  .dept-row {
+    display: flex; gap: 24px; justify-content: center;
+    flex-wrap: wrap; position: relative;
+  }
+  .dept-connector {
+    position: relative; display: flex; justify-content: center; width: 100%;
+  }
+  .dept-connector::before {
+    content: ''; position: absolute; top: 0;
+    left: calc(50% - 540px); right: calc(50% - 540px);
+    height: 2px; background: var(--line-color);
+  }
+  .dept-col {
+    display: flex; flex-direction: column; align-items: center;
+    min-width: 210px; max-width: 250px;
+  }
+  .dept-label {
+    font-size: 0.68rem; font-weight: 700;
+    letter-spacing: 0.12em; text-transform: uppercase;
+    padding: 5px 14px; border-radius: 20px;
+    margin-bottom: 8px; white-space: nowrap;
+  }
+  .dept-label.growth { background: #faf3e3; color: var(--dept-growth); }
+  .dept-label.office { background: #edf1f8; color: var(--dept-office); }
+  .dept-label.warehouse { background: #e6f3ed; color: var(--dept-warehouse); }
+  .dept-label.roadshow { background: #faeee8; color: var(--dept-roadshow); }
+  .dept-label.customer { background: #f2ecf7; color: var(--dept-customer); }
+  .sub-cards { display: flex; flex-direction: column; align-items: center; }
+  .card.role { border-style: dashed; background: #fafaf8; }
+  .card.role .name { font-weight: 600; color: var(--text-secondary); }
+  @media (max-width: 1200px) {
+    .dept-row { gap: 16px; }
+    .dept-connector::before { display: none; }
+    .card { min-width: 185px; max-width: 215px; padding: 14px 14px 12px; }
+  }
+  @media (max-width: 768px) {
+    .dept-row { flex-direction: column; align-items: center; }
+    .header h1 { font-size: 1.6rem; }
+  }
+  @media print {
+    body { background: #fff; padding: 20px; }
+    .card:hover { transform: none; box-shadow: 0 2px 8px var(--card-shadow); }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>MedMassager <span>&mdash;</span> Org Chart 2026</h1>
+  <p class="subtitle">With Contact Directory</p>
+</div>
+
+<div class="org-tree">
+
+  <!-- GOD -->
+  <div class="card god">
+    <div class="name">God</div>
+    <div class="title">The Almighty</div>
+  </div>
+  <div class="v-line"></div>
+
+  <!-- FOUNDER -->
+  <div class="card founder">
+    <div class="name">Michael Terblanche</div>
+    <div class="title">Founder &amp; Chief Executive Officer</div>
+    <div class="contact">
+      <div class="contact-row">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M22 4L12 13 2 4"/></svg>
+        michael&#64;medmassager.com
+      </div>
+      <div class="contact-row">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6A19.79 19.79 0 012.12 4.18 2 2 0 014.11 2h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>
+        O: 828-475-6022 x100
+      </div>
+      <div class="contact-row">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6A19.79 19.79 0 012.12 4.18 2 2 0 014.11 2h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>
+        M: 843-372-1011
+      </div>
+    </div>
+  </div>
+  <div class="v-line"></div>
+
+  <!-- HORIZONTAL CONNECTOR -->
+  <div class="dept-connector"><div style="height:2px;"></div></div>
+
+  <!-- DEPARTMENT ROW -->
+  <div class="dept-row">
+
+    <!-- OFFICE OPERATIONS -->
+    <div class="dept-col">
+      <div class="v-line short"></div>
+      <div class="dept-label office">Office Operations</div>
+      <div class="sub-cards">
+        <div class="card">
+          <div class="name">Paulina Klimczyk</div>
+          <div class="title">Director of Finance &amp; Administration</div>
+          <div class="contact">
+            <div class="contact-row">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M22 4L12 13 2 4"/></svg>
+              paulina&#64;medmassager.com
+            </div>
+            <div class="contact-row">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6A19.79 19.79 0 012.12 4.18 2 2 0 014.11 2h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>
+              O: 828-475-6022 x101
+            </div>
+          </div>
+        </div>
+        <div class="v-line short"></div>
+        <div class="card">
+          <div class="name">Yesi Santana</div>
+          <div class="title">Operations Coordinator</div>
+          <div class="contact">
+            <div class="contact-row">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M22 4L12 13 2 4"/></svg>
+              yesi&#64;medmassager.com
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- WAREHOUSE & LOGISTICS -->
+    <div class="dept-col">
+      <div class="v-line short"></div>
+      <div class="dept-label warehouse">Warehouse &amp; Logistics</div>
+      <div class="sub-cards">
+        <div class="card">
+          <div class="name">Alex Bryantsev</div>
+          <div class="title">Logistics Manager</div>
+          <div class="contact">
+            <div class="contact-row">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M22 4L12 13 2 4"/></svg>
+              alex&#64;medmassager.com
+            </div>
+            <div class="contact-row">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6A19.79 19.79 0 012.12 4.18 2 2 0 014.11 2h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>
+              O: 828-475-6022 x105
+            </div>
+            <div class="contact-row">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6A19.79 19.79 0 012.12 4.18 2 2 0 014.11 2h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>
+              M: 323-356-0006
+            </div>
+          </div>
+        </div>
+        <div class="v-line short"></div>
+        <div class="card">
+          <div class="name">Grayson Hughes</div>
+          <div class="title">Logistics Coordinator</div>
+          <div class="contact">
+            <div class="contact-row">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M22 4L12 13 2 4"/></svg>
+              shipping&#64;medmassager.com
+            </div>
+            <div class="contact-row">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6A19.79 19.79 0 012.12 4.18 2 2 0 014.11 2h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>
+              M: 704-460-5837
+            </div>
+          </div>
+        </div>
+        <div class="v-line short"></div>
+        <div class="card">
+          <div class="name">Alisha Starkey</div>
+          <div class="title">Quality Control Manager</div>
+          <div class="contact">
+            <div class="contact-row">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M22 4L12 13 2 4"/></svg>
+              quality&#64;medmassager.com
+            </div>
+            <div class="contact-row">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6A19.79 19.79 0 012.12 4.18 2 2 0 014.11 2h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>
+              M: 304-928-0719
+            </div>
+          </div>
+        </div>
+        <div class="v-line short"></div>
+        <div class="card role">
+          <div class="name">QC Team</div>
+          <div class="title">Quality Control Technician</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- GROWTH & COMMERCE -->
+    <div class="dept-col">
+      <div class="v-line short"></div>
+      <div class="dept-label growth">Growth &amp; Commerce</div>
+      <div class="card">
+        <div class="name">David Schwartz</div>
+        <div class="title">Head of eCommerce</div>
+        <div class="contact">
+          <div class="contact-row">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M22 4L12 13 2 4"/></svg>
+            david&#64;medmassager.com
+          </div>
+          <div class="contact-row">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6A19.79 19.79 0 012.12 4.18 2 2 0 014.11 2h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>
+            M: 828-424-6111
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ROADSHOW OPERATIONS -->
+    <div class="dept-col">
+      <div class="v-line short"></div>
+      <div class="dept-label roadshow">Roadshow Operations</div>
+      <div class="sub-cards">
+        <div class="card">
+          <div class="name">Karla Gonzalez</div>
+          <div class="title">Director of Roadshow Operations</div>
+          <div class="contact">
+            <div class="contact-row">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M22 4L12 13 2 4"/></svg>
+              karla&#64;medmassager.com
+            </div>
+            <div class="contact-row">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6A19.79 19.79 0 012.12 4.18 2 2 0 014.11 2h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>
+              M: 786-287-4214
+            </div>
+          </div>
+        </div>
+        <div class="v-line short"></div>
+        <div class="card">
+          <div class="name">Rene Griego</div>
+          <div class="title">Field Operations Manager</div>
+          <div class="contact">
+            <div class="contact-row">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M22 4L12 13 2 4"/></svg>
+              rene&#64;medmassager.com
+            </div>
+            <div class="contact-row">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6A19.79 19.79 0 012.12 4.18 2 2 0 014.11 2h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>
+              M: 909-449-9270
+            </div>
+          </div>
+        </div>
+        <div class="v-line short"></div>
+        <div class="card">
+          <div class="name">Greg Orrange</div>
+          <div class="title">Training &amp; Talent Development Manager</div>
+          <div class="contact">
+            <div class="contact-row">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M22 4L12 13 2 4"/></svg>
+              greg&#64;medmassager.com
+            </div>
+            <div class="contact-row">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6A19.79 19.79 0 012.12 4.18 2 2 0 014.11 2h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>
+              M: 407-405-0476
+            </div>
+          </div>
+        </div>
+        <div class="v-line short"></div>
+        <div class="card role">
+          <div class="name">Costco Sales Reps</div>
+          <div class="title">Roadshow Sales Specialist</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CUSTOMER SERVICE -->
+    <div class="dept-col">
+      <div class="v-line short"></div>
+      <div class="dept-label customer">Customer Service</div>
+      <div class="sub-cards">
+        <div class="card">
+          <div class="name">Kari Johnston</div>
+          <div class="title">Director of Customer Experience</div>
+          <div class="contact">
+            <div class="contact-row">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M22 4L12 13 2 4"/></svg>
+              kari&#64;medmassager.com
+            </div>
+            <div class="contact-row">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6A19.79 19.79 0 012.12 4.18 2 2 0 014.11 2h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>
+              O: 828-475-6022 x109
+            </div>
+            <div class="contact-row">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6A19.79 19.79 0 012.12 4.18 2 2 0 014.11 2h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>
+              M: 843-372-3422
+            </div>
+          </div>
+        </div>
+        <div class="v-line short"></div>
+        <div class="card role">
+          <div class="name">CS Leader</div>
+          <div class="title">Customer Experience Manager</div>
+        </div>
+        <div class="v-line short"></div>
+        <div class="card role">
+          <div class="name">CS Personnel</div>
+          <div class="title">Customer Experience Specialist</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div style="text-align:center; margin-top:50px; font-size:0.72rem; color:var(--text-tertiary); letter-spacing:0.06em; line-height:1.8;">
+  <span style="border:1.5px dashed var(--card-border); padding:2px 8px; border-radius:4px; display:inline-block; margin-bottom:6px;">Dashed border</span> = generic/team role (no individual contact)<br>
+  O = Office &middot; M = Mobile
+</div>
+
+</body>
+</html>
