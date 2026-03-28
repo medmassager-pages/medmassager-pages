@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MedMassager — David Schwartz Earnings Model</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --navy: #0f1f35; --navy-mid: #1a3350;
+    --gold: #c8a84b; --gold-light: #e8c96a;
+    --ec: #2d7dd2; --ec-light: #6aadee;
+    --ws: #1a9e6e; --ws-light: #47c99a;
+    --text: #f0ece4; --text-muted: #8a9ab5; --text-dim: #4a5a72;
+    --surface: #162840; --surface-raised: #1d3450; --surface-high: #243d5e;
+    --border: rgba(200,168,75,0.15); --border-subtle: rgba(255,255,255,0.06);
+  }
+  html { font-size: 14px; }
+  body { font-family: 'DM Sans', sans-serif; background: var(--navy); color: var(--text); min-height: 100vh; }
+  header { background: var(--navy-mid); border-bottom: 1px solid var(--border); padding: 28px 48px; display: flex; align-items: flex-end; justify-content: space-between; gap: 24px; }
+  .header-left h1 { font-family: 'DM Serif Display', serif; font-size: 2rem; font-weight: 400; letter-spacing: -0.02em; line-height: 1.1; }
+  .header-left h1 em { font-style: italic; color: var(--gold); }
+  .header-sub { font-size: 0.78rem; color: var(--text-muted); margin-top: 6px; font-weight: 300; letter-spacing: 0.04em; text-transform: uppercase; }
+  .header-badge { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 10px 18px; text-align: right; flex-shrink: 0; }
+  .badge-label { font-size: 0.68rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
+  .badge-val { font-family: 'DM Serif Display', serif; font-size: 1.5rem; color: var(--gold); margin-top: 2px; }
+  .main { padding: 32px 48px; max-width: 1300px; margin: 0 auto; }
+  .controls-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 28px; }
+  .panel { background: var(--surface); border: 1px solid var(--border-subtle); border-radius: 12px; overflow: hidden; }
+  .panel-header { padding: 13px 20px; border-bottom: 1px solid var(--border-subtle); display: flex; align-items: center; gap: 10px; }
+  .panel-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .panel-title { font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); }
+  .panel-body { padding: 16px 20px; }
+  .section-sub { font-size: 0.66rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-dim); margin-bottom: 12px; }
+  .slider-row { display: grid; grid-template-columns: 38px 1fr 34px 72px; align-items: center; gap: 10px; margin-bottom: 9px; }
+  .slider-row:last-child { margin-bottom: 0; }
+  .s-label { font-size: 0.78rem; color: var(--text-muted); }
+  .s-pct { font-size: 0.82rem; font-weight: 600; color: var(--text); text-align: right; }
+  .s-sales { font-size: 0.7rem; color: var(--text-muted); text-align: right; white-space: nowrap; }
+  input[type=range] { -webkit-appearance: none; appearance: none; width: 100%; height: 3px; border-radius: 2px; background: var(--surface-high); outline: none; cursor: pointer; }
+  input[type=range].ec-range { accent-color: var(--ec); }
+  input[type=range].ec-range::-webkit-slider-thumb { -webkit-appearance: none; width: 14px; height: 14px; border-radius: 50%; background: var(--ec); cursor: pointer; transition: transform 0.1s; }
+  input[type=range].ec-range::-webkit-slider-thumb:hover { transform: scale(1.25); }
+  input[type=range].ws-range { accent-color: var(--ws); }
+  input[type=range].ws-range::-webkit-slider-thumb { -webkit-appearance: none; width: 14px; height: 14px; border-radius: 50%; background: var(--ws); cursor: pointer; transition: transform 0.1s; }
+  input[type=range].ws-range::-webkit-slider-thumb:hover { transform: scale(1.25); }
+  .divider { height: 1px; background: var(--border-subtle); margin: 14px 0; }
+  .tier-table { width: 100%; border-collapse: collapse; font-size: 0.75rem; margin-top: 4px; }
+  .tier-table thead tr { border-bottom: 1px solid var(--border-subtle); }
+  .tier-table th { font-size: 0.64rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-dim); padding: 0 8px 6px; text-align: left; }
+  .tier-table th:last-child { text-align: right; }
+  .tier-table td { padding: 7px 8px; color: var(--text-muted); border-bottom: 1px solid var(--border-subtle); }
+  .tier-table tr:last-child td { border-bottom: none; }
+  .tier-table td:last-child { text-align: right; font-weight: 600; }
+  .tier-table td.ec-rate { color: var(--ec-light); }
+  .tier-table td.ws-rate { color: var(--ws-light); }
+  .metrics-row { display: grid; grid-template-columns: repeat(5, minmax(0,1fr)); gap: 14px; margin-bottom: 28px; }
+  .metric-card { background: var(--surface); border: 1px solid var(--border-subtle); border-radius: 10px; padding: 14px 16px; position: relative; overflow: hidden; }
+  .metric-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; }
+  .metric-card.ec::before { background: var(--ec); }
+  .metric-card.ws::before { background: var(--ws); }
+  .metric-card.gold::before { background: var(--gold); }
+  .metric-card.total::before { background: linear-gradient(90deg, var(--ec), var(--ws)); }
+  .metric-label { font-size: 0.66rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted); margin-bottom: 6px; font-weight: 600; }
+  .metric-value { font-family: 'DM Serif Display', serif; font-size: 1.55rem; color: var(--text); line-height: 1; }
+  .metric-sub { font-size: 0.68rem; color: var(--text-dim); margin-top: 5px; }
+  .chart-panel { background: var(--surface); border: 1px solid var(--border-subtle); border-radius: 12px; padding: 20px 24px; margin-bottom: 24px; }
+  .chart-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+  .chart-title { font-family: 'DM Serif Display', serif; font-size: 1rem; font-weight: 400; }
+  .legend { display: flex; gap: 20px; font-size: 0.72rem; color: var(--text-muted); }
+  .legend span { display: flex; align-items: center; gap: 6px; }
+  .swatch { width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0; }
+  .chart-wrap { position: relative; width: 100%; height: 260px; }
+  .table-panel { background: var(--surface); border: 1px solid var(--border-subtle); border-radius: 12px; overflow: hidden; margin-bottom: 32px; }
+  table.main-table { width: 100%; border-collapse: collapse; font-size: 0.79rem; table-layout: fixed; }
+  table.main-table thead tr { background: var(--surface-raised); }
+  table.main-table th { padding: 11px 14px; font-size: 0.65rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.07em; color: var(--text-muted); text-align: right; border-bottom: 1px solid var(--border-subtle); white-space: nowrap; }
+  table.main-table th:first-child { text-align: left; }
+  table.main-table td { padding: 10px 14px; text-align: right; border-bottom: 1px solid var(--border-subtle); color: var(--text-muted); font-weight: 300; }
+  table.main-table td:first-child { text-align: left; font-weight: 500; color: var(--text); }
+  table.main-table tbody tr:last-child td { border-bottom: none; background: var(--surface-raised); font-weight: 500; }
+  table.main-table tbody tr:hover td { background: rgba(255,255,255,0.02); }
+  .base-row td { color: var(--text-dim) !important; font-style: italic; }
+  .ec-val { color: var(--ec-light); font-weight: 500; }
+  .ws-val { color: var(--ws-light); font-weight: 500; }
+  .total-val { color: var(--gold-light); font-weight: 600; }
+  footer { text-align: center; padding: 20px 48px 32px; font-size: 0.68rem; color: var(--text-dim); border-top: 1px solid var(--border-subtle); }
+  @media (max-width: 900px) {
+    header { padding: 20px 24px; flex-direction: column; align-items: flex-start; }
+    .main { padding: 20px 24px; }
+    .controls-grid { grid-template-columns: 1fr; }
+    .metrics-row { grid-template-columns: repeat(2, 1fr); }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-left">
+    <h1>MedMassager &mdash; <em>Earnings Model</em></h1>
+    <div class="header-sub">David Schwartz &nbsp;·&nbsp; CNDY LLC &nbsp;·&nbsp; Growth-Based Services Agreement 2026</div>
+  </div>
+  <div class="header-badge">
+    <div class="badge-label">Base retainer</div>
+    <div class="badge-val">$156,000</div>
+  </div>
+</header>
+
+<div class="main">
+
+  <div class="controls-grid">
+
+    <div class="panel">
+      <div class="panel-header">
+        <div class="panel-dot" style="background:var(--ec);"></div>
+        <div class="panel-title">E-commerce channel</div>
+      </div>
+      <div class="panel-body">
+        <div class="section-sub">Annual growth rate &mdash; drag to adjust</div>
+        <div class="slider-row"><span class="s-label">2026</span><input type="range" class="ec-range" min="0" max="80" step="1" value="20" id="eg0"><span class="s-pct" id="egv0">20%</span><span class="s-sales" id="ecs0"></span></div>
+        <div class="slider-row"><span class="s-label">2027</span><input type="range" class="ec-range" min="0" max="80" step="1" value="20" id="eg1"><span class="s-pct" id="egv1">20%</span><span class="s-sales" id="ecs1"></span></div>
+        <div class="slider-row"><span class="s-label">2028</span><input type="range" class="ec-range" min="0" max="80" step="1" value="20" id="eg2"><span class="s-pct" id="egv2">20%</span><span class="s-sales" id="ecs2"></span></div>
+        <div class="slider-row"><span class="s-label">2029</span><input type="range" class="ec-range" min="0" max="80" step="1" value="20" id="eg3"><span class="s-pct" id="egv3">20%</span><span class="s-sales" id="ecs3"></span></div>
+        <div class="slider-row"><span class="s-label">2030</span><input type="range" class="ec-range" min="0" max="80" step="1" value="20" id="eg4"><span class="s-pct" id="egv4">20%</span><span class="s-sales" id="ecs4"></span></div>
+        <div class="divider"></div>
+        <div class="section-sub">Commission tiers &mdash; fixed rates</div>
+        <table class="tier-table">
+          <thead><tr><th>Incremental above $6M baseline</th><th>Rate</th></tr></thead>
+          <tbody>
+            <tr><td>First $3,000,000</td><td class="ec-rate">4%</td></tr>
+            <tr><td>Next $3,000,000</td><td class="ec-rate">6%</td></tr>
+            <tr><td>Next $4,000,000</td><td class="ec-rate">8%</td></tr>
+            <tr><td>Above $10,000,000</td><td class="ec-rate">10%</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-header">
+        <div class="panel-dot" style="background:var(--ws);"></div>
+        <div class="panel-title">Wholesale channel</div>
+      </div>
+      <div class="panel-body">
+        <div class="section-sub">Annual growth rate &mdash; drag to adjust</div>
+        <div class="slider-row"><span class="s-label">2026</span><input type="range" class="ws-range" min="0" max="80" step="1" value="20" id="wg0"><span class="s-pct" id="wgv0">20%</span><span class="s-sales" id="wcs0"></span></div>
+        <div class="slider-row"><span class="s-label">2027</span><input type="range" class="ws-range" min="0" max="80" step="1" value="20" id="wg1"><span class="s-pct" id="wgv1">20%</span><span class="s-sales" id="wcs1"></span></div>
+        <div class="slider-row"><span class="s-label">2028</span><input type="range" class="ws-range" min="0" max="80" step="1" value="20" id="wg2"><span class="s-pct" id="wgv2">20%</span><span class="s-sales" id="wcs2"></span></div>
+        <div class="slider-row"><span class="s-label">2029</span><input type="range" class="ws-range" min="0" max="80" step="1" value="20" id="wg3"><span class="s-pct" id="wgv3">20%</span><span class="s-sales" id="wcs3"></span></div>
+        <div class="slider-row"><span class="s-label">2030</span><input type="range" class="ws-range" min="0" max="80" step="1" value="20" id="wg4"><span class="s-pct" id="wgv4">20%</span><span class="s-sales" id="wcs4"></span></div>
+        <div class="divider"></div>
+        <div class="section-sub">Commission tiers &mdash; fixed rates</div>
+        <table class="tier-table">
+          <thead><tr><th>Incremental above $6M baseline</th><th>Rate</th></tr></thead>
+          <tbody>
+            <tr><td>First $3,000,000</td><td class="ws-rate">3%</td></tr>
+            <tr><td>Next $3,000,000</td><td class="ws-rate">5%</td></tr>
+            <tr><td>Next $4,000,000</td><td class="ws-rate">7%</td></tr>
+            <tr><td>Above $10,000,000</td><td class="ws-rate">9%</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="metrics-row" id="metrics"></div>
+
+  <div class="chart-panel">
+    <div class="chart-top">
+      <div class="chart-title">Annual compensation breakdown</div>
+      <div class="legend">
+        <span><span class="swatch" style="background:#2d7dd2;"></span>E-commerce bonus</span>
+        <span><span class="swatch" style="background:#1a9e6e;"></span>Wholesale bonus</span>
+        <span><span class="swatch" style="background:#3a4a62;"></span>Base retainer</span>
+      </div>
+    </div>
+    <div class="chart-wrap"><canvas id="mainChart"></canvas></div>
+  </div>
+
+  <div class="table-panel">
+    <table class="main-table">
+      <thead>
+        <tr>
+          <th>Year</th>
+          <th>EC sales</th>
+          <th>EC growth</th>
+          <th>EC bonus</th>
+          <th>WS sales</th>
+          <th>WS growth</th>
+          <th>WS bonus</th>
+          <th>Base retainer</th>
+          <th>Total comp</th>
+        </tr>
+      </thead>
+      <tbody id="tbody"></tbody>
+    </table>
+  </div>
+
+</div>
+
+<footer>
+  MedMassager &nbsp;·&nbsp; Confidential &nbsp;·&nbsp; CNDY LLC Services Agreement 2026 &nbsp;·&nbsp;
+  Both baselines fixed at $6,000,000 &mdash; bonuses apply on incremental revenue above baseline only
+</footer>
+
+<script>
+const BASE = 156000;
+const EC_BASE = 6000000;
+const WS_BASE = 6000000;
+const YEARS = [2025,2026,2027,2028,2029,2030];
+const EC_RATES = [0.04, 0.06, 0.08, 0.10];
+const WS_RATES = [0.03, 0.05, 0.07, 0.09];
+const BANDS = [3000000, 3000000, 4000000, Infinity];
+
+function calcBonus(rev, base, rates) {
+  let inc = rev - base;
+  if (inc <= 0) return 0;
+  let b = 0;
+  for (let i = 0; i < 4; i++) {
+    const chunk = Math.min(inc, BANDS[i]);
+    b += chunk * rates[i];
+    inc -= chunk;
+    if (inc <= 0) break;
+  }
+  return b;
+}
+
+function getGrowth() {
+  const eg = [], wg = [];
+  for (let i = 0; i < 5; i++) {
+    eg.push(+document.getElementById('eg'+i).value);
+    wg.push(+document.getElementById('wg'+i).value);
+  }
+  return {eg, wg};
+}
+
+function fmtM(n)  { return '$' + (n/1e6).toFixed(2) + 'M'; }
+function fmtMS(n) { return '$' + (n/1e6).toFixed(1) + 'M'; }
+function fmt(n)   { return '$' + Math.round(n).toLocaleString(); }
+
+function calcRows() {
+  const {eg, wg} = getGrowth();
+  const rows = [];
+  let ecRev = EC_BASE, wsRev = WS_BASE;
+  rows.push({yr:2025, ecRev, wsRev, ecGrow:0, wsGrow:0, ecBonus:0, wsBonus:0, total:BASE});
+  for (let i = 0; i < 5; i++) {
+    ecRev = ecRev * (1 + eg[i]/100);
+    wsRev = wsRev * (1 + wg[i]/100);
+    const ecBonus = calcBonus(ecRev, EC_BASE, EC_RATES);
+    const wsBonus = calcBonus(wsRev, WS_BASE, WS_RATES);
+    rows.push({yr:YEARS[i+1], ecRev, wsRev, ecGrow:eg[i], wsGrow:wg[i], ecBonus, wsBonus, total:BASE+ecBonus+wsBonus});
+  }
+  return rows;
+}
+
+let chart;
+
+function render() {
+  const rows = calcRows();
+  const {eg, wg} = getGrowth();
+  let ecRev = EC_BASE, wsRev = WS_BASE;
+  for (let i = 0; i < 5; i++) {
+    ecRev = ecRev * (1 + eg[i]/100);
+    wsRev = wsRev * (1 + wg[i]/100);
+    document.getElementById('ecs'+i).textContent = fmtM(ecRev);
+    document.getElementById('wcs'+i).textContent = fmtM(wsRev);
+  }
+
+  const last = rows[rows.length-1];
+  const cumBonus = rows.slice(1).reduce((a,r) => a + r.ecBonus + r.wsBonus, 0);
+
+  document.getElementById('metrics').innerHTML = [
+    {cls:'ec',    label:'Year 5 EC bonus',       val: fmt(last.ecBonus),             sub: 'on ' + fmtMS(last.ecRev) + ' in EC sales'},
+    {cls:'ws',    label:'Year 5 WS bonus',        val: fmt(last.wsBonus),             sub: 'on ' + fmtMS(last.wsRev) + ' in WS sales'},
+    {cls:'total', label:'Year 5 total comp',      val: fmt(last.total),               sub: 'base + EC bonus + WS bonus'},
+    {cls:'gold',  label:'5-yr cumul. bonus',      val: fmt(cumBonus),                 sub: 'above base retainer'},
+    {cls:'gold',  label:'Year 5 combined sales',  val: fmtMS(last.ecRev+last.wsRev), sub: 'EC + wholesale combined'},
+  ].map(c => `
+    <div class="metric-card ${c.cls}">
+      <div class="metric-label">${c.label}</div>
+      <div class="metric-value">${c.val}</div>
+      <div class="metric-sub">${c.sub}</div>
+    </div>`).join('');
+
+  document.getElementById('tbody').innerHTML = rows.map((r,i) => `
+    <tr class="${i===0?'base-row':''}">
+      <td>${r.yr}${i===0?' &mdash; baseline':''}</td>
+      <td>${fmtMS(r.ecRev)}</td>
+      <td>${i===0?'&mdash;':'+'+r.ecGrow+'%'}</td>
+      <td>${i===0?'&mdash;':'<span class="ec-val">'+fmt(r.ecBonus)+'</span>'}</td>
+      <td>${fmtMS(r.wsRev)}</td>
+      <td>${i===0?'&mdash;':'+'+r.wsGrow+'%'}</td>
+      <td>${i===0?'&mdash;':'<span class="ws-val">'+fmt(r.wsBonus)+'</span>'}</td>
+      <td>${fmt(BASE)}</td>
+      <td>${i===0?fmt(BASE):'<span class="total-val">'+fmt(r.total)+'</span>'}</td>
+    </tr>`).join('');
+
+  const baseArr = rows.map(() => BASE);
+  const ecArr   = rows.map(r => Math.round(r.ecBonus));
+  const wsArr   = rows.map(r => Math.round(r.wsBonus));
+
+  if (chart) {
+    chart.data.datasets[0].data = baseArr;
+    chart.data.datasets[1].data = wsArr;
+    chart.data.datasets[2].data = ecArr;
+    chart.update();
+  } else {
+    chart = new Chart(document.getElementById('mainChart'), {
+      type: 'bar',
+      data: {
+        labels: YEARS.map(String),
+        datasets: [
+          {label:'Base retainer',    data:baseArr, backgroundColor:'#3a4a62', stack:'s'},
+          {label:'Wholesale bonus',  data:wsArr,   backgroundColor:'#1a9e6e', stack:'s'},
+          {label:'E-commerce bonus', data:ecArr,   backgroundColor:'#2d7dd2', stack:'s'},
+        ]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        animation: {duration: 200},
+        plugins: {
+          legend: {display: false},
+          tooltip: {
+            backgroundColor:'#1d3450', titleColor:'#f0ece4', bodyColor:'#8a9ab5',
+            borderColor:'rgba(200,168,75,0.3)', borderWidth:1,
+            callbacks: {label: ctx => ' '+ctx.dataset.label+': $'+Math.round(ctx.raw).toLocaleString()}
+          }
+        },
+        scales: {
+          x: {stacked:true, ticks:{color:'#8a9ab5',autoSkip:false}, grid:{color:'rgba(255,255,255,0.04)'}},
+          y: {stacked:true, ticks:{color:'#8a9ab5',callback:v=>'$'+(v/1000).toFixed(0)+'K'}, grid:{color:'rgba(255,255,255,0.04)'}}
+        }
+      }
+    });
+  }
+}
+
+for (let i = 0; i < 5; i++) {
+  ['eg','wg'].forEach(ch => {
+    const sl = document.getElementById(ch+i);
+    const vl = document.getElementById(ch+'v'+i);
+    sl.addEventListener('input', () => { vl.textContent = sl.value+'%'; render(); });
+  });
+}
+
+render();
+</script>
+</body>
+</html>
