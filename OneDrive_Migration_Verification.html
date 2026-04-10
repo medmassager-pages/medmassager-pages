@@ -1,0 +1,812 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OneDrive Migration – File Inventory Verification</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+  :root {
+    --bg: #faf9f7;
+    --surface: #ffffff;
+    --surface-alt: #f3f1ee;
+    --border: #e2dfd8;
+    --border-hover: #c4c0b6;
+    --text: #1a1a18;
+    --text-muted: #6b6960;
+    --text-dim: #9e9a8f;
+    --accent: #2563eb;
+    --accent-soft: rgba(37, 99, 235, 0.08);
+    --accent-border: rgba(37, 99, 235, 0.25);
+    --danger: #dc2626;
+    --danger-soft: rgba(220, 38, 38, 0.08);
+    --success: #16a34a;
+    --success-soft: rgba(22, 163, 74, 0.08);
+    --warning: #d97706;
+    --warning-soft: rgba(217, 119, 6, 0.08);
+    --purple: #7c3aed;
+    --purple-soft: rgba(124, 58, 237, 0.08);
+    --radius: 10px;
+    --radius-sm: 6px;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Outfit', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    line-height: 1.5;
+  }
+
+  .top-bar {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 14px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
+  .top-bar .brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 600;
+    font-size: 15px;
+    letter-spacing: -0.3px;
+  }
+
+  .top-bar .brand .dot {
+    width: 10px;
+    height: 10px;
+    background: var(--accent);
+    border-radius: 50%;
+  }
+
+  .top-actions {
+    display: flex;
+    gap: 8px;
+  }
+
+  .container {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 40px 24px 80px;
+  }
+
+  h1 {
+    font-size: 26px;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    margin-bottom: 6px;
+  }
+
+  .subtitle {
+    color: var(--text-muted);
+    font-size: 14px;
+    margin-bottom: 32px;
+    line-height: 1.6;
+  }
+
+  /* Stats bar */
+  .stats-bar {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 28px;
+    flex-wrap: wrap;
+  }
+
+  .stat {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px 18px;
+    flex: 1;
+    min-width: 120px;
+  }
+
+  .stat .val {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--accent);
+  }
+
+  .stat .label {
+    font-size: 11px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    margin-top: 2px;
+  }
+
+  /* Person section */
+  .person-section {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    margin-bottom: 20px;
+    overflow: hidden;
+    transition: box-shadow 0.2s;
+  }
+
+  .person-section:hover {
+    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+  }
+
+  .person-header {
+    padding: 18px 22px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.15s;
+  }
+
+  .person-header:hover {
+    background: var(--surface-alt);
+  }
+
+  .person-info {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+
+  .avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 15px;
+    color: white;
+    flex-shrink: 0;
+  }
+
+  .person-name {
+    font-weight: 600;
+    font-size: 15px;
+    letter-spacing: -0.2px;
+  }
+
+  .person-role {
+    font-size: 12px;
+    color: var(--text-muted);
+  }
+
+  .person-meta {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .file-badge {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    font-weight: 500;
+    padding: 4px 10px;
+    border-radius: 20px;
+    background: var(--accent-soft);
+    color: var(--accent);
+  }
+
+  .response-badge {
+    font-size: 11px;
+    font-weight: 600;
+    padding: 3px 10px;
+    border-radius: 20px;
+  }
+
+  .badge-received {
+    background: var(--success-soft);
+    color: var(--success);
+  }
+
+  .badge-pending {
+    background: var(--warning-soft);
+    color: var(--warning);
+  }
+
+  .badge-no-access {
+    background: var(--surface-alt);
+    color: var(--text-dim);
+  }
+
+  .chevron {
+    font-size: 18px;
+    color: var(--text-dim);
+    transition: transform 0.2s;
+  }
+
+  .person-section.open .chevron {
+    transform: rotate(90deg);
+  }
+
+  .person-body {
+    display: none;
+    border-top: 1px solid var(--border);
+    padding: 0;
+  }
+
+  .person-section.open .person-body {
+    display: block;
+  }
+
+  /* Source quote */
+  .source-quote {
+    background: var(--surface-alt);
+    padding: 14px 22px;
+    font-size: 13px;
+    color: var(--text-muted);
+    border-bottom: 1px solid var(--border);
+    line-height: 1.6;
+  }
+
+  .source-quote strong {
+    color: var(--text);
+    font-weight: 500;
+  }
+
+  /* File table */
+  .file-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+
+  .file-table th {
+    text-align: left;
+    padding: 10px 16px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-dim);
+    border-bottom: 1px solid var(--border);
+    background: var(--surface-alt);
+  }
+
+  .file-table td {
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+  }
+
+  .file-table tr:last-child td {
+    border-bottom: none;
+  }
+
+  .file-table tr:hover td {
+    background: rgba(37, 99, 235, 0.03);
+  }
+
+  .file-name {
+    font-weight: 500;
+    color: var(--text);
+  }
+
+  .file-type-tag {
+    font-size: 10px;
+    font-weight: 600;
+    padding: 2px 7px;
+    border-radius: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    display: inline-block;
+    margin-left: 6px;
+  }
+
+  .tag-sheet { background: var(--accent-soft); color: var(--accent); }
+  .tag-folder { background: var(--purple-soft); color: var(--purple); }
+  .tag-file { background: var(--surface-alt); color: var(--text-muted); }
+
+  .status-select {
+    font-family: 'Outfit', sans-serif;
+    font-size: 12px;
+    padding: 4px 8px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--surface);
+    color: var(--text);
+    cursor: pointer;
+    outline: none;
+  }
+
+  .status-select:focus {
+    border-color: var(--accent);
+  }
+
+  .notes-input {
+    font-family: 'Outfit', sans-serif;
+    font-size: 12px;
+    padding: 6px 10px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--surface);
+    color: var(--text);
+    width: 100%;
+    min-width: 160px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .notes-input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px var(--accent-soft);
+  }
+
+  .notes-input::placeholder {
+    color: var(--text-dim);
+  }
+
+  /* Add file row */
+  .add-file-row {
+    padding: 12px 22px;
+    border-top: 1px solid var(--border);
+  }
+
+  .add-file-inline {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  .add-file-inline input {
+    font-family: 'Outfit', sans-serif;
+    font-size: 13px;
+    padding: 8px 12px;
+    border: 1px dashed var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--surface-alt);
+    color: var(--text);
+    outline: none;
+    flex: 1;
+    min-width: 140px;
+  }
+
+  .add-file-inline input:focus {
+    border-color: var(--accent);
+    border-style: solid;
+    background: var(--surface);
+  }
+
+  .add-file-inline select {
+    font-family: 'Outfit', sans-serif;
+    font-size: 13px;
+    padding: 8px 10px;
+    border: 1px dashed var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--surface-alt);
+    color: var(--text);
+    cursor: pointer;
+    outline: none;
+  }
+
+  /* Buttons */
+  .btn {
+    font-family: 'Outfit', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 8px 16px;
+    border-radius: var(--radius-sm);
+    border: none;
+    cursor: pointer;
+    transition: all 0.15s;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .btn-primary {
+    background: var(--accent);
+    color: white;
+  }
+  .btn-primary:hover { background: #1d4ed8; }
+
+  .btn-outline {
+    background: transparent;
+    color: var(--text-muted);
+    border: 1px solid var(--border);
+  }
+  .btn-outline:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  .btn-sm {
+    font-size: 12px;
+    padding: 6px 12px;
+  }
+
+  .btn-ghost {
+    background: transparent;
+    color: var(--accent);
+    padding: 6px 10px;
+    font-size: 12px;
+  }
+  .btn-ghost:hover { background: var(--accent-soft); }
+
+  .btn-danger-ghost {
+    background: transparent;
+    color: var(--danger);
+    padding: 4px 8px;
+    font-size: 11px;
+  }
+  .btn-danger-ghost:hover { background: var(--danger-soft); }
+
+  /* No response section */
+  .no-response-note {
+    padding: 16px 22px;
+    font-size: 13px;
+    color: var(--text-muted);
+    font-style: italic;
+  }
+
+  /* Save indicator */
+  .save-indicator {
+    font-size: 12px;
+    color: var(--success);
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+
+  .save-indicator.visible { opacity: 1; }
+
+  @media (max-width: 640px) {
+    .container { padding: 24px 14px 60px; }
+    .top-bar { padding: 12px 16px; }
+    .stats-bar { flex-direction: column; }
+    .add-file-inline { flex-direction: column; }
+    .file-table { font-size: 12px; }
+    .file-table th, .file-table td { padding: 8px 10px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="top-bar">
+  <div class="brand">
+    <div class="dot"></div>
+    <span>OneDrive Migration – Verification</span>
+  </div>
+  <div class="top-actions">
+    <span class="save-indicator" id="saveIndicator">Saved</span>
+    <button class="btn btn-outline btn-sm" onclick="exportCSV()">Export CSV</button>
+    <button class="btn btn-primary btn-sm" onclick="saveAll()">Save All</button>
+  </div>
+</div>
+
+<div class="container">
+  <h1>File Inventory Verification</h1>
+  <p class="subtitle">
+    Collated from email responses (Jan 12–14, 2026). Review each person's files, update the status, add OneDrive paths or notes, and add any new files discovered since January. All changes save to your browser automatically.
+  </p>
+
+  <div class="stats-bar" id="statsBar"></div>
+
+  <div id="peopleContainer"></div>
+</div>
+
+<script>
+const STORAGE_KEY = 'medmassager_migration_verification';
+
+const initialData = [
+  {
+    name: 'Yesi Santana',
+    role: 'Office Operations Coordinator',
+    email: 'yesi@medmassager.com',
+    color: '#7c3aed',
+    status: 'received',
+    sourceDate: 'Jan 13, 2026',
+    sourceQuote: 'Initial response listed Serial #\'s, Inventory movement, Master schedule, Packing lists. Follow-up added Employee List.',
+    files: [
+      { name: "Serial #'s", type: 'sheet', onedrivePath: '', notes: '', migrationStatus: 'pending', isNew: false },
+      { name: 'Inventory Movement', type: 'folder', onedrivePath: '', notes: 'Also used by Alex', migrationStatus: 'pending', isNew: false },
+      { name: 'Master Schedule', type: 'sheet', onedrivePath: '', notes: 'Also used by Alex, Karla (as "MS")', migrationStatus: 'pending', isNew: false },
+      { name: 'Packing Lists', type: 'file', onedrivePath: '', notes: '', migrationStatus: 'pending', isNew: false },
+      { name: 'Employee List', type: 'sheet', onedrivePath: '', notes: 'Added in follow-up. Also used by Karla', migrationStatus: 'pending', isNew: false },
+    ]
+  },
+  {
+    name: 'Alex Bryantsev',
+    role: 'Logistics Manager',
+    email: 'alex@medmassager.com',
+    color: '#2563eb',
+    status: 'received',
+    sourceDate: 'Jan 13, 2026',
+    sourceQuote: 'Listed Master Schedule (sheet), Inventory Movement → Freight shipment log → inventory monthly count (folders), Weekly Inventory Sheet (folder), Basic 2024 (sheet — "I forgot what folder it\'s in, I have it bookmarked").',
+    files: [
+      { name: 'Master Schedule', type: 'sheet', onedrivePath: '', notes: 'Also used by Yesi, Karla', migrationStatus: 'pending', isNew: false },
+      { name: 'Inventory Movement', type: 'folder', onedrivePath: '', notes: 'Contains: Freight shipment log, inventory monthly count', migrationStatus: 'pending', isNew: false },
+      { name: 'Freight Shipment Log', type: 'file', onedrivePath: '', notes: 'Subfolder/file inside Inventory Movement', migrationStatus: 'pending', isNew: false },
+      { name: 'Inventory Monthly Count', type: 'file', onedrivePath: '', notes: 'Subfolder/file inside Inventory Movement', migrationStatus: 'pending', isNew: false },
+      { name: 'Weekly Inventory Sheet', type: 'folder', onedrivePath: '', notes: '', migrationStatus: 'pending', isNew: false },
+      { name: 'Basic 2024', type: 'sheet', onedrivePath: '', notes: '"I forgot what folder it\'s in, I have it bookmarked" — need to identify location', migrationStatus: 'pending', isNew: false },
+    ]
+  },
+  {
+    name: 'Karla Gonzalez',
+    role: 'Director of Roadshow Operations',
+    email: 'karla@medmassager.com',
+    color: '#dc2626',
+    status: 'received',
+    sourceDate: 'Jan 13, 2026',
+    sourceQuote: 'Listed Basic Version 2024 (noted: "We may want to keep the old Basic Version as well"), MS, Employee List, Usercode - Tablets and Scanners.',
+    files: [
+      { name: 'Basic Version 2024', type: 'sheet', onedrivePath: '', notes: 'Karla noted: "We may want to keep the old Basic Version as well"', migrationStatus: 'pending', isNew: false },
+      { name: 'Basic Version (old)', type: 'sheet', onedrivePath: '', notes: 'Legacy version — Karla requested keeping it', migrationStatus: 'pending', isNew: false },
+      { name: 'MS (Master Schedule)', type: 'sheet', onedrivePath: '', notes: 'Same file as Master Schedule used by Yesi and Alex', migrationStatus: 'pending', isNew: false },
+      { name: 'Employee List', type: 'sheet', onedrivePath: '', notes: 'Also used by Yesi', migrationStatus: 'pending', isNew: false },
+      { name: 'Usercode - Tablets and Scanners', type: 'file', onedrivePath: '', notes: '', migrationStatus: 'pending', isNew: false },
+    ]
+  },
+  {
+    name: 'Paulina Klimczyk',
+    role: 'Director of Finance and Administration',
+    email: 'paulina@medmassager.com',
+    color: '#d97706',
+    status: 'received',
+    sourceDate: 'Jan 14, 2026',
+    sourceQuote: 'Separate email to Michael. Noted "Not sure how specific I have to be. There is a lot I access daily. This is definitely some of it." Also mentioned "All the files and folders that are on my desktop."',
+    files: [
+      { name: 'Amazon Invoice Master Table', type: 'sheet', onedrivePath: '', notes: '', migrationStatus: 'pending', isNew: false },
+      { name: 'Distributors and Contractors', type: 'folder', onedrivePath: '', notes: '"everything in it" — need full contents inventory', migrationStatus: 'pending', isNew: false },
+      { name: 'Florida Foreign Corporation Registration', type: 'file', onedrivePath: '', notes: 'Corporate / compliance doc', migrationStatus: 'pending', isNew: false },
+      { name: 'Forms - Letterhead', type: 'folder', onedrivePath: '', notes: '', migrationStatus: 'pending', isNew: false },
+      { name: 'Kelly Services', type: 'folder', onedrivePath: '', notes: '"everything in it" — need full contents inventory', migrationStatus: 'pending', isNew: false },
+      { name: 'MAILED', type: 'folder', onedrivePath: '', notes: '', migrationStatus: 'pending', isNew: false },
+      { name: 'PASSWORD LIST', type: 'file', onedrivePath: '', notes: 'SECURITY: Should migrate to Bitwarden, not Google Drive', migrationStatus: 'pending', isNew: false },
+      { name: 'Desktop files & folders', type: 'folder', onedrivePath: '', notes: '"All the files and folders on my desktop" — needs full audit with Paulina', migrationStatus: 'pending', isNew: false },
+    ]
+  },
+  {
+    name: 'Kari Johnston',
+    role: 'Director of Customer Experience',
+    email: 'kari@medmassager.com',
+    color: '#9e9a8f',
+    status: 'no-access',
+    sourceDate: null,
+    sourceQuote: 'Paulina noted: "I don\'t think Kari, David or Summer have access to OneDrive." Verify whether Kari has any OneDrive files or links.',
+    files: []
+  },
+  {
+    name: 'David Schwartz',
+    role: 'Head of eCommerce',
+    email: 'david@medmassager.com',
+    color: '#9e9a8f',
+    status: 'no-access',
+    sourceDate: null,
+    sourceQuote: 'Paulina noted: "I don\'t think Kari, David or Summer have access to OneDrive." David works primarily through other platforms. Verify.',
+    files: []
+  },
+];
+
+function loadData() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
+    if (saved && saved.length > 0) return saved;
+  } catch {}
+  return JSON.parse(JSON.stringify(initialData));
+}
+
+function saveData(data) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  const ind = document.getElementById('saveIndicator');
+  ind.classList.add('visible');
+  setTimeout(() => ind.classList.remove('visible'), 1500);
+}
+
+let data = loadData();
+
+function render() {
+  const container = document.getElementById('peopleContainer');
+  container.innerHTML = '';
+
+  let totalFiles = 0, verified = 0, pending = 0, respondents = 0, noResponse = 0;
+
+  data.forEach((person, pi) => {
+    person.files.forEach(f => {
+      totalFiles++;
+      if (f.migrationStatus === 'verified') verified++;
+      else pending++;
+    });
+    if (person.status === 'received') respondents++;
+    if (person.status === 'pending') noResponse++;
+  });
+
+  document.getElementById('statsBar').innerHTML = `
+    <div class="stat"><div class="val">${respondents}</div><div class="label">Responded</div></div>
+    <div class="stat"><div class="val">${noResponse}</div><div class="label">No response</div></div>
+    <div class="stat"><div class="val">${totalFiles}</div><div class="label">Total files</div></div>
+    <div class="stat"><div class="val">${verified}</div><div class="label">Verified</div></div>
+    <div class="stat"><div class="val">${pending}</div><div class="label">Pending</div></div>
+  `;
+
+  data.forEach((person, pi) => {
+    const section = document.createElement('div');
+    section.className = 'person-section';
+    section.id = `person-${pi}`;
+
+    const initials = person.name.split(' ').map(w => w[0]).join('');
+    const badgeClass = person.status === 'received' ? 'badge-received' : person.status === 'pending' ? 'badge-pending' : 'badge-no-access';
+    const badgeLabel = person.status === 'received' ? 'Responded' : person.status === 'pending' ? 'No response' : 'No OneDrive access?';
+
+    section.innerHTML = `
+      <div class="person-header" onclick="togglePerson(${pi})">
+        <div class="person-info">
+          <div class="avatar" style="background:${person.color}">${initials}</div>
+          <div>
+            <div class="person-name">${person.name}</div>
+            <div class="person-role">${person.role}</div>
+          </div>
+        </div>
+        <div class="person-meta">
+          ${person.files.length > 0 ? `<span class="file-badge">${person.files.length} files</span>` : ''}
+          <span class="response-badge ${badgeClass}">${badgeLabel}</span>
+          <span class="chevron">›</span>
+        </div>
+      </div>
+      <div class="person-body">
+        <div class="source-quote">
+          <strong>Email source${person.sourceDate ? ` (${person.sourceDate})` : ''}:</strong> ${person.sourceQuote}
+        </div>
+        ${person.files.length > 0 ? `
+        <table class="file-table">
+          <thead>
+            <tr>
+              <th>File / Folder</th>
+              <th>OneDrive Path or Link</th>
+              <th>Notes</th>
+              <th style="width:100px">Status</th>
+              <th style="width:40px"></th>
+            </tr>
+          </thead>
+          <tbody id="files-${pi}">
+            ${person.files.map((f, fi) => renderFileRow(pi, fi, f)).join('')}
+          </tbody>
+        </table>
+        ` : `<div class="no-response-note">${person.status === 'pending' ? 'No files submitted yet. Follow up with this team member.' : 'Verify whether this person uses any OneDrive files or shared links.'}</div>`}
+        <div class="add-file-row">
+          <div class="add-file-inline">
+            <input type="text" id="newName-${pi}" placeholder="Add a file or folder name…">
+            <select id="newType-${pi}">
+              <option value="file">File</option>
+              <option value="sheet">Sheet</option>
+              <option value="folder">Folder</option>
+            </select>
+            <input type="text" id="newPath-${pi}" placeholder="OneDrive path (optional)">
+            <button class="btn btn-ghost btn-sm" onclick="addFile(${pi})">+ Add</button>
+          </div>
+        </div>
+      </div>
+    `;
+    container.appendChild(section);
+  });
+}
+
+function renderFileRow(pi, fi, f) {
+  const typeClass = f.type === 'sheet' ? 'tag-sheet' : f.type === 'folder' ? 'tag-folder' : 'tag-file';
+  const typeLabel = f.type === 'sheet' ? 'Sheet' : f.type === 'folder' ? 'Folder' : 'File';
+  const newTag = f.isNew ? '<span style="font-size:10px;font-weight:600;color:#16a34a;margin-left:6px;">NEW</span>' : '';
+
+  return `
+    <tr>
+      <td>
+        <span class="file-name">${f.name}</span>
+        <span class="file-type-tag ${typeClass}">${typeLabel}</span>
+        ${newTag}
+      </td>
+      <td><input class="notes-input" value="${escHtml(f.onedrivePath)}" placeholder="e.g. https://1drv.ms/… or path" onchange="updateField(${pi},${fi},'onedrivePath',this.value)"></td>
+      <td><input class="notes-input" value="${escHtml(f.notes)}" placeholder="Add notes…" onchange="updateField(${pi},${fi},'notes',this.value)"></td>
+      <td>
+        <select class="status-select" onchange="updateField(${pi},${fi},'migrationStatus',this.value)">
+          <option value="pending" ${f.migrationStatus === 'pending' ? 'selected' : ''}>Pending</option>
+          <option value="verified" ${f.migrationStatus === 'verified' ? 'selected' : ''}>Verified</option>
+          <option value="migrated" ${f.migrationStatus === 'migrated' ? 'selected' : ''}>Migrated</option>
+          <option value="duplicate" ${f.migrationStatus === 'duplicate' ? 'selected' : ''}>Duplicate</option>
+          <option value="skip" ${f.migrationStatus === 'skip' ? 'selected' : ''}>Skip</option>
+        </select>
+      </td>
+      <td><button class="btn-danger-ghost" onclick="removeFile(${pi},${fi})" title="Remove">✕</button></td>
+    </tr>
+  `;
+}
+
+function escHtml(str) {
+  return (str || '').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function togglePerson(pi) {
+  const el = document.getElementById(`person-${pi}`);
+  el.classList.toggle('open');
+}
+
+function updateField(pi, fi, field, value) {
+  data[pi].files[fi][field] = value;
+  saveData(data);
+}
+
+function addFile(pi) {
+  const nameInput = document.getElementById(`newName-${pi}`);
+  const typeSelect = document.getElementById(`newType-${pi}`);
+  const pathInput = document.getElementById(`newPath-${pi}`);
+
+  const name = nameInput.value.trim();
+  if (!name) { nameInput.focus(); return; }
+
+  data[pi].files.push({
+    name: name,
+    type: typeSelect.value,
+    onedrivePath: pathInput.value.trim(),
+    notes: 'Added after initial inventory',
+    migrationStatus: 'pending',
+    isNew: true,
+  });
+
+  if (data[pi].status !== 'received') {
+    data[pi].status = 'received';
+  }
+
+  saveData(data);
+  nameInput.value = '';
+  pathInput.value = '';
+  render();
+  document.getElementById(`person-${pi}`).classList.add('open');
+}
+
+function removeFile(pi, fi) {
+  if (confirm(`Remove "${data[pi].files[fi].name}"?`)) {
+    data[pi].files.splice(fi, 1);
+    saveData(data);
+    render();
+    document.getElementById(`person-${pi}`).classList.add('open');
+  }
+}
+
+function saveAll() {
+  saveData(data);
+}
+
+function exportCSV() {
+  const headers = ['Person', 'Role', 'Email', 'File Name', 'Type', 'OneDrive Path', 'Notes', 'Status', 'Added After Initial'];
+  const rows = [headers.join(',')];
+
+  data.forEach(person => {
+    person.files.forEach(f => {
+      rows.push([
+        `"${person.name}"`,
+        `"${person.role}"`,
+        person.email,
+        `"${f.name}"`,
+        f.type,
+        `"${f.onedrivePath || ''}"`,
+        `"${(f.notes || '').replace(/"/g, '""')}"`,
+        f.migrationStatus,
+        f.isNew ? 'Yes' : 'No',
+      ].join(','));
+    });
+  });
+
+  const blob = new Blob([rows.join('\n')], { type: 'text/csv' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `OneDrive_Migration_Verification_${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
+}
+
+render();
+</script>
+
+</body>
+</html>
